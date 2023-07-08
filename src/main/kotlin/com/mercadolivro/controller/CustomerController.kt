@@ -1,7 +1,10 @@
 package com.mercadolivro.controller
 
 import com.mercadolivro.controller.request.PostCustomerRequest
+import com.mercadolivro.controller.request.PutCustomerRequest
+import com.mercadolivro.extension.toCustomerModel
 import com.mercadolivro.model.CustomerModel
+import com.mercadolivro.service.CustomerService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -16,47 +19,34 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("customers")
-class CustomerController {
-
-    val customers = mutableListOf<CustomerModel>()
-
+class CustomerController(
+        val customerService: CustomerService
+) {
     @GetMapping
     fun getAll(@RequestParam name: String?): List<CustomerModel> {
-
-        name?.let {
-            return customers.filter { it.name.contains(name, true) }
-        }
-
-        return customers
+        return customerService.getAll(name)
     }
 
     @GetMapping("/{id}")
     fun getCustomer(@PathVariable id: String): CustomerModel {
-        return customers.first { it.id == id }
+        return customerService.getCustomer(id)
     }
 
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun update(@PathVariable id: String, @RequestBody putCustomerRequest: PostCustomerRequest) {
-        val customer = customers.first { it.id == id }.let {
-            it.name = putCustomerRequest.name
-            it.email = putCustomerRequest.email
-        }
+    fun update(@PathVariable id: String, @RequestBody putCustomerRequest: PutCustomerRequest) {
+        customerService.update(putCustomerRequest.toCustomerModel(id))
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun create(@RequestBody customer: PostCustomerRequest) {
-
-        val indexOfNewCostumer = customers.count() + 1
-
-        val newCustomer = CustomerModel(indexOfNewCostumer.toString(), customer.name, customer.email)
-        customers.add(newCustomer)
+        customerService.create(customer.toCustomerModel())
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun delete(@PathVariable id: String) {
-        customers.removeIf { it.id == id }
+        customerService.delete(id)
     }
 }
