@@ -2,6 +2,7 @@ package com.mercadolivro.service
 
 import com.mercadolivro.controller.request.PostCustomerRequest
 import com.mercadolivro.model.CustomerModel
+import com.mercadolivro.repository.CustomerRepository
 import org.springframework.stereotype.Service
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -9,39 +10,44 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
 
 @Service
-class CustomerService {
+class CustomerService(
+        val customerRepository: CustomerRepository
+) {
 
     private val customers = mutableListOf<CustomerModel>()
 
     fun getAll(name: String?): List<CustomerModel> {
 
         name?.let {
-            return customers.filter { it.name.contains(name, true) }
+            return customerRepository.findByNameContaining(it)
         }
 
-        return customers
+        return customerRepository.findAll().toList()
     }
 
-    fun getCustomer(id: String): CustomerModel {
-        return customers.first { it.id == id }
+    fun getCustomer(id: Int): CustomerModel {
+        return customerRepository.findById(id).orElseThrow()
     }
 
     fun update(customer: CustomerModel) {
-        val customer = customers.first { it.id == customer.id }.let {
-            it.name = customer.name
-            it.email = customer.email
+
+        if (customerRepository.existsById(customer.id!!)) {
+            customerRepository.save(customer)
+        } else {
+            throw Exception()
         }
     }
 
     fun create(customer: CustomerModel) {
-
-        val indexOfNewCostumer = customers.count() + 1
-        customer.id = indexOfNewCostumer.toString()
-
-        customers.add(customer)
+        customerRepository.save(customer)
     }
 
-    fun delete(id: String) {
-        customers.removeIf { it.id == id }
+    fun delete(id: Int) {
+
+        if (customerRepository.existsById(id)) {
+            customerRepository.deleteById(id)
+        } else {
+            throw Exception()
+        }
     }
 }
