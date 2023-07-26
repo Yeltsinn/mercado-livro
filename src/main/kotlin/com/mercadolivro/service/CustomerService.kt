@@ -6,7 +6,8 @@ import org.springframework.stereotype.Service
 
 @Service
 class CustomerService(
-        val customerRepository: CustomerRepository
+        val customerRepository: CustomerRepository,
+        val bookService: BookService
 ) {
 
     private val customers = mutableListOf<CustomerModel>()
@@ -20,7 +21,7 @@ class CustomerService(
         return customerRepository.findAll().toList()
     }
 
-    fun getById(id: Int): CustomerModel {
+    fun findById(id: Int): CustomerModel {
         return customerRepository.findById(id).orElseThrow()
     }
 
@@ -39,10 +40,8 @@ class CustomerService(
 
     fun delete(id: Int) {
 
-        if (customerRepository.existsById(id)) {
-            customerRepository.deleteById(id)
-        } else {
-            throw Exception()
-        }
+        val customer = findById(id)
+        bookService.deleteByCustomer(customer)
+        customerRepository.deleteById(id)
     }
 }
